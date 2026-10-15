@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小朋友算术练习 🌟</title>
+<style>
+  body {
+    font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffe0f0 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  h1 {
+    text-align: center;
+    color: #ff6b9d;
+    font-size: 2em;
+    margin-bottom: 5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #ffaa33;
+    font-size: 1.1em;
+    margin-bottom: 25px;
+  }
+  .score-board {
+    text-align: center;
+    font-size: 1.3em;
+    color: #7c4dff;
+    margin-bottom: 20px;
+    font-weight: bold;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px 15px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 3px solid transparent;
+    transition: all 0.3s;
+  }
+  .card.correct {
+    border-color: #4caf50;
+    background: #f0fff0;
+  }
+  .card.wrong {
+    border-color: #ff5252;
+    background: #fff0f0;
+    animation: shake 0.4s;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+  .emoji {
+    font-size: 2.5em;
+    margin-bottom: 8px;
+  }
+  .question {
+    font-size: 1.8em;
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 12px;
+  }
+  .answer-input {
+    width: 70px;
+    height: 50px;
+    font-size: 1.8em;
+    text-align: center;
+    border: 3px solid #ddd;
+    border-radius: 12px;
+    color: #333;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .answer-input:focus {
+    border-color: #ffaa33;
+  }
+  .feedback {
+    font-size: 1.5em;
+    height: 1.8em;
+    margin-top: 8px;
+  }
+  .btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+  }
+  button {
+    padding: 12px 28px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.1s;
+  }
+  button:active { transform: scale(0.95); }
+  .btn-check {
+    background: linear-gradient(135deg, #ffaa33, #ff6b9d);
+    color: white;
+    box-shadow: 0 4px 12px rgba(255,107,157,0.4);
+  }
+  .btn-new {
+    background: linear-gradient(135deg, #7c4dff, #40c4ff);
+    color: white;
+    box-shadow: 0 4px 12px rgba(124,77,255,0.4);
+  }
+  .result-banner {
+    display: none;
+    text-align: center;
+    font-size: 1.6em;
+    color: #ff6b9d;
+    font-weight: bold;
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 20px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  .mode-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 2px solid #ddd;
+    background: white;
+    color: #888;
+    font-size: 1em;
+    cursor: pointer;
+  }
+  .mode-btn.active {
+    background: linear-gradient(135deg, #ffaa33, #ff6b9d);
+    color: white;
+    border-color: transparent;
+  }
+</style>
+</head>
+<body>
+
+<h1>🌈 小宝贝算术游戏</h1>
+<p class="subtitle">做完一题换一颗星星 ⭐</p>
+
+<div class="score-board">⭐ 已得星星：<span id="stars">0</span> 颗</div>
+
+<div class="mode-row">
+  <button class="mode-btn active" onclick="setMode('add')" id="mode-add">➕ 加法</button>
+  <button class="mode-btn" onclick="setMode('sub')" id="mode-sub">➖ 减法</button>
+  <button class="mode-btn" onclick="setMode('mix')" id="mode-mix">🎲 混合</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="btn-row">
+  <button class="btn-check" onclick="checkAll()">✅ 检查答案</button>
+  <button class="btn-new" onclick="newGame()">🔄 换一组题目</button>
+</div>
+
+<div class="result-banner" id="result"></div>
+
+<script>
+const emojis = ['🍎','🐱','🌸','🦋','🍓','⭐','🐸','🌈','🍉','🐠','🦄','🌻','🎀','🍦','🐼'];
+let questions = [];
+let mode = 'add';
+let stars = 0;
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + m).classList.add('active');
+  newGame();
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function makeQuestion() {
+  let a, b, op, ans;
+  if (mode === 'add') {
+    a = randInt(1, 9);
+    b = randInt(1, 10 - a);
+    op = '+'; ans = a + b;
+  } else if (mode === 'sub') {
+    a = randInt(2, 10);
+    b = randInt(1, a);
+    op = '-'; ans = a - b;
+  } else {
+    if (Math.random() > 0.5) {
+      a = randInt(1, 9); b = randInt(1, 10 - a); op = '+'; ans = a + b;
+    } else {
+      a = randInt(2, 10); b = randInt(1, a); op = '-'; ans = a - b;
+    }
+  }
+  return { a, b, op, ans };
+}
+
+function newGame() {
+  questions = Array.from({length: 9}, makeQuestion);
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  document.getElementById('result').style.display = 'none';
+
+  questions.forEach((q, i) => {
+    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + i;
+    card.innerHTML = `
+      <div class="emoji">${emoji}</div>
+      <div class="question">${q.a} ${q.op} ${q.b} = ?</div>
+      <input class="answer-input" type="number" id="ans-${i}" min="0" max="10"
+        onkeydown="if(event.key==='Enter') checkAll()"
+        oninput="clearFeedback(${i})">
+      <div class="feedback" id="fb-${i}"></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function clearFeedback(i) {
+  document.getElementById('fb-' + i).textContent = '';
+  document.getElementById('card-' + i).classList.remove('correct','wrong');
+}
+
+function checkAll() {
+  let correct = 0;
+  let allFilled = true;
+  questions.forEach((q, i) => {
+    const input = document.getElementById('ans-' + i);
+    const fb = document.getElementById('fb-' + i);
+    const card = document.getElementById('card-' + i);
+    const val = input.value.trim();
+    if (val === '') { allFilled = false; return; }
+    if (parseInt(val) === q.ans) {
+      fb.textContent = '🎉 棒棒的！';
+      card.classList.add('correct');
+      card.classList.remove('wrong');
+      correct++;
+    } else {
+      fb.textContent = '再想想 💭';
+      card.classList.add('wrong');
+      card.classList.remove('correct');
+    }
+  });
+
+  if (!allFilled) return;
+
+  stars += correct;
+  document.getElementById('stars').textContent = stars;
+
+  const banner = document.getElementById('result');
+  banner.style.display = 'block';
+  if (correct === 9) {
+    banner.textContent = '🏆 全对！你是小天才！太厉害了！';
+  } else if (correct >= 6) {
+    banner.textContent = `✨ 答对了 ${correct} 题！非常棒，再试试剩下的！`;
+  } else {
+    banner.textContent = `💪 答对了 ${correct} 题！加油加油，你可以的！`;
+  }
+}
+
+newGame();
+</script>
+</body>
+</html>
