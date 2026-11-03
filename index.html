@@ -779,20 +779,15 @@ function numDel() {
 
 // ── 检查 ──
 function checkAll() {
-  const allFilled = answers.every(a=>a!=='');
-  if (!allFilled) {
-    document.getElementById('result-row').textContent = '还有题目没填哦 😊';
-    // 跳到第一个空题
-    const empty = answers.findIndex(a=>a==='');
-    selectCard(empty);
-    return;
-  }
-
   let correct = 0;
   questions.forEach((q,i) => {
     const card = document.getElementById('card-'+i);
     const fb   = document.getElementById('fb-'+i);
-    if (parseInt(answers[i]) === q.ans) {
+    if (answers[i] === '') {
+      // 空题：不标对错，保持原状
+      card.classList.remove('correct','wrong','selected');
+      fb.textContent = '';
+    } else if (parseInt(answers[i]) === q.ans) {
       card.classList.add('correct'); card.classList.remove('wrong','selected');
       fb.textContent = '🎉';
       correct++;
@@ -803,28 +798,36 @@ function checkAll() {
   });
   selectedIdx = null;
 
-  // 星星
-  const total = S.addStars(correct);
-  document.getElementById('stars').textContent = total;
+  // 已填题目中答对几题
+  const filled = answers.filter(a=>a!=='').length;
 
-  // 揭拼图
-  if (correct > 0) revealTiles(correct);
+  // 星星（只按答对数加）
+  if (correct > 0) {
+    const total = S.addStars(correct);
+    document.getElementById('stars').textContent = total;
 
-  // 徽章
-  if (total >= 50 && !S.hasBadgeToday()) {
-    const icons  = ['🏆','🥇','🎖️','👑','🌟','🎉','💎','🦄'];
-    const labels = ['今日50星','算术达人','超级棒棒','星星冠军','数学天才','每日冠军','钻石宝宝','独角兽奖'];
-    const idx = S.getBadges().length % icons.length;
-    const badge = { icon:icons[idx], label:labels[idx], date:S.today() };
-    S.addBadge(badge);
-    renderBadges();
-    celebrate('🎉🏆🎉\n今天得了 50 颗星！\n你是最棒的！');
+    // 揭拼图
+    revealTiles(correct);
+
+    // 徽章
+    if (total >= 50 && !S.hasBadgeToday()) {
+      const icons  = ['🏆','🥇','🎖️','👑','🌟','🎉','💎','🦄'];
+      const labels = ['今日50星','算术达人','超级棒棒','星星冠军','数学天才','每日冠军','钻石宝宝','独角兽奖'];
+      const idx = S.getBadges().length % icons.length;
+      const badge = { icon:icons[idx], label:labels[idx], date:S.today() };
+      S.addBadge(badge);
+      renderBadges();
+      celebrate('🎉🏆🎉\n今天得了 50 颗星！\n你是最棒的！');
+    }
   }
 
   const banner = document.getElementById('result-row');
-  if (correct===10)      banner.textContent = '🏆 全对！你是小天才！';
-  else if(correct>=7)   banner.textContent = `✨ 答对 ${correct} 题！非常棒！`;
-  else                  banner.textContent = `💪 答对 ${correct} 题！继续加油！`;
+  const empty = answers.filter(a=>a==='').length;
+  if (filled === 0)          banner.textContent = '还没填任何答案哦 😊';
+  else if (correct===10)     banner.textContent = '🏆 全对！你是小天才！';
+  else if (correct===filled) banner.textContent = `✨ 填了 ${filled} 题全对！继续加油！`;
+  else if (correct>=7)       banner.textContent = `✨ 答对 ${correct} 题！非常棒！`;
+  else                       banner.textContent = `💪 答对 ${correct} 题！继续加油！`;
 }
 
 // ── 渲染徽章 ──
